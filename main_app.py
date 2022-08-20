@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import pandas as pd
+import time
 
 # Title
 st.markdown("<h1 style=\"text-align:center;\">Forward Gravity Modelling</h1>", unsafe_allow_html=True)
@@ -136,7 +137,7 @@ if model_anomaly == "The Sphere":
 
     data_input = [model_anomaly, p, r, do, zo, xo, xt, delta_x]
     data_column = {"Position (x-axis)": 0,
-                   "Gravity Calculated (10e-9 m/s^2)": 0,
+                   "Gravity Calculated (10^-15 m/s^2)": 0,
                    "Density (kg/m^3)": p,
                    "Radius (m)": r,
                    "Start Position Anomaly (m)": do,
@@ -157,7 +158,7 @@ elif model_anomaly == "The Horizontal Cylinder":
 
     data_input = [model_anomaly, p, r, do, zo, xo, xt, delta_x]
     data_column = {"Position (x-axis)": 0,
-                   "Gravity Calculated (10e-9 m/s^2)": 0,
+                   "Gravity Calculated (10^-15 m/s^2)": 0,
                    "Density (kg/m^3)": p,
                    "Radius (m)": r,
                    "Start Position Anomaly (m)": do,
@@ -180,7 +181,7 @@ elif model_anomaly == "The Dipping Thin Sheet with Finite Length":
 
     data_input = [model_anomaly, p, t, l, do, zo, xo, xt, delta_x, a]
     data_column = {"Position (x-axis)": 0,
-                   "Gravity Calculated (10e-9 m/s^2)": 0,
+                   "Gravity Calculated (10^-15 m/s^2)": 0,
                    "Density (kg/m^3)": p,
                    "Thickness (m)": t,
                    "Length (m)": l,
@@ -203,7 +204,7 @@ elif model_anomaly == "The Semi-Infinite Horizontal Sheet":
 
     data_input = [model_anomaly, p, t, l, do, zo, xo, xt, delta_x]
     data_column = {"Position (x-axis)": 0,
-                   "Gravity Calculated (10e-9 m/s^2)": 0,
+                   "Gravity Calculated (10^-15 m/s^2)": 0,
                    "Density (kg/m^3)": p,
                    "Thickness (m)": t,
                    "Length (m)": l,
@@ -215,85 +216,92 @@ else:
 
 st.subheader("Visualization Data")
 
-data_cal = processing_data.gravity_calculated(data_input)
-data_columns = tuple(data_column.keys())
-dataset = np.eye(len(data_cal[0]), len(data_columns))
+try:
+    data_cal = processing_data.gravity_calculated(data_input)
+    data_columns = tuple(data_column.keys())
+    dataset = np.eye(len(data_cal[0]), len(data_columns))
 
-for i in range(len(data_columns)):
-    for j in range(len(data_cal[0])):
-        if i == 0:
-            dataset[j][i] = data_cal[i][j]
-        elif i == 1:
-            dataset[j][i] = data_cal[i][j] * 1e10
-        else:
-            dataset[j][i] = data_column[data_columns[i]]
+    for i in range(len(data_columns)):
+        for j in range(len(data_cal[0])):
+            if i == 0:
+                dataset[j][i] = data_cal[i][j]
+            elif i == 1:
+                dataset[j][i] = data_cal[i][j] * 1e15
+            else:
+                dataset[j][i] = data_column[data_columns[i]]
 
-dataset = pd.DataFrame(dataset, columns=data_column)
-st.write(dataset)
-
-
-def convert_df(df):
-    # IMPORTANT: Cache the conversion to prevent computation on every rerun
-    return df.to_csv().encode('utf-8')
+    dataset = pd.DataFrame(dataset, columns=data_column)
+    st.write(dataset)
 
 
-csv = convert_df(dataset)
-
-st.download_button(
-     label="Download data as CSV File",
-     data=csv,
-     file_name='Forward Modelling Data.csv',
-     mime='text/csv',
- )
-
-fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(12, 10))
-ax[0].plot(data_cal[0], data_cal[1])
-ax[0].grid()
-ax[0].set_title("Plot Graph Gravity Acceleration")
-ax[0].set_ylim(min(data_cal[1]) - 0.1 * min(data_cal[1]), max(data_cal[1]) + 0.1 * max(data_cal[1]))
-ax[0].set_xlabel("Spacing position $(m)$")
-ax[0].set_ylabel("Gravity acceleration $\\left ( \\frac{m}{s^2} \\right )$")
-
-ax[1].set_xlim(xo, xt + delta_x, delta_x)
-ax[1].set_ylim(0, 2 * zo, 50)
-ax[1].grid()
-ax[1].invert_yaxis()
-ax[0].set_title("Plot Graph Visualization Anomaly Body")
-ax[1].set_xlabel("Spacing Line $(m)$")
-ax[1].set_ylabel("Depth $(m)$")
-
-if model_anomaly == "The Sphere":
-    circle = plt.Circle((do, zo), r, fill=True)
-    ax[1].add_artist(circle)
-
-elif model_anomaly == "The Horizontal Cylinder":
-    circle = plt.Circle((do, zo), r, fill=True)
-    ax[1].add_artist(circle)
-
-elif model_anomaly == "The Dipping Thin Sheet with Finite Length":
-    rect = mpatches.Rectangle((do - 0.5 * l, zo - 0.5 * t), l, t,
-                              fill=True,
-                              color="blue",
-                              linewidth=2,
-                              angle=a)
-    ax[1].add_patch(rect)
+    def convert_df(df):
+        # IMPORTANT: Cache the conversion to prevent computation on every rerun
+        return df.to_csv().encode('utf-8')
 
 
-elif model_anomaly == "The Semi-Infinite Horizontal Sheet":
-    rect = mpatches.Rectangle((do - 0.5 * l, zo - 0.5 * t), l, t,
-                              fill=True,
-                              color="blue",
-                              linewidth=2,
-                              angle=0)
-    ax[1].add_patch(rect)
+    csv = convert_df(dataset)
 
-st.pyplot(fig)
+    st.download_button(
+        label="Download data as CSV File",
+        data=csv,
+        file_name='Forward Modelling Data.csv',
+        mime='text/csv',
+    )
 
-img = plt.savefig("Forward Modelling Image.png")
+    fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(12, 10))
+    ax[0].plot(data_cal[0], data_cal[1])
+    ax[0].grid()
+    ax[0].set_title("Plot Graph Gravity Acceleration")
+    ax[0].set_ylim(min(data_cal[1]) - 0.1 * min(data_cal[1]), max(data_cal[1]) + 0.1 * max(data_cal[1]))
+    ax[0].set_xlabel("Spacing position $(m)$")
+    ax[0].set_ylabel("Gravity acceleration $\\left ( \\frac{m}{s^2} \\right )$")
 
-with open("Forward Modelling Image.png", "rb") as file:
-    btn = st.download_button(
-        label="Download image",
-        data=file,
-        file_name="Forward Modelling Image.png",
-        mime="image/png")
+    ax[1].set_xlim(xo, xt + delta_x, delta_x)
+    ax[1].set_ylim(0, 2 * zo, 50)
+    ax[1].grid()
+    ax[1].invert_yaxis()
+    ax[0].set_title("Plot Graph Visualization Anomaly Body")
+    ax[1].set_xlabel("Spacing Line $(m)$")
+    ax[1].set_ylabel("Depth $(m)$")
+
+    if model_anomaly == "The Sphere":
+        circle = plt.Circle((do, zo), r, fill=True)
+        ax[1].add_artist(circle)
+
+    elif model_anomaly == "The Horizontal Cylinder":
+        circle = plt.Circle((do, zo), r, fill=True)
+        ax[1].add_artist(circle)
+
+    elif model_anomaly == "The Dipping Thin Sheet with Finite Length":
+        rect = mpatches.Rectangle((do - 0.5 * l, zo - 0.5 * t), l, t,
+                                  fill=True,
+                                  color="blue",
+                                  linewidth=2,
+                                  angle=a)
+        ax[1].add_patch(rect)
+
+    elif model_anomaly == "The Semi-Infinite Horizontal Sheet":
+        rect = mpatches.Rectangle((do - 0.5 * l, zo - 0.5 * t), l, t,
+                                  fill=True,
+                                  color="blue",
+                                  linewidth=2,
+                                  angle=0)
+        ax[1].add_patch(rect)
+
+    ax[0].get_shared_x_axes().join(ax[0], ax[1])
+
+    st.pyplot(fig)
+
+    img = plt.savefig("Forward Modelling Image.png")
+
+    with open("Forward Modelling Image.png", "rb") as file:
+        btn = st.download_button(
+            label="Download image",
+            data=file,
+            file_name="Forward Modelling Image.png",
+            mime="image/png")
+
+except:
+    with st.spinner('Wait for it...'):
+        time.sleep(10)
+    st.success('Done!')
