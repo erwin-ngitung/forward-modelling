@@ -1,7 +1,7 @@
 import streamlit as st
 from PIL import Image
-from package import table_html
-from package import processing_data
+from tools import table_html
+from tools import processing_data
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -13,7 +13,7 @@ st.markdown("<svg width=\"705\" height=\"5\"><line x1=\"0\" y1=\"2.5\" x2=\"705\
             "stroke-width=\"4\" fill=\"black\" /></svg>", unsafe_allow_html=True)
 
 # Your Biography - Sidebar
-link = r"C:\Users\Erwin\Documents\My Data\Foto Pribadi\Foto_Profil_Erwin.jpg"
+link = r"images/Erwin Fernanda.jpg"
 img = Image.open(link)
 # st.sidebar.image(img, width=100)
 
